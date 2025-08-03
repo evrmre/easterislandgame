@@ -1,1 +1,38 @@
-<!-- placeholder -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easter Island Shooter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- The main canvas where the action happens -->
+        <canvas id="gameCanvas" width="960" height="600"></canvas>
+        <!-- HUD overlay for weapon stats, health and waves -->
+        <div id="hud">
+            <div id="stats-left">
+                <div style="font-size:14px; margin-bottom:4px;">HEALTH</div>
+                <div class="bar"><div id="health-bar" class="bar-fill health-fill"></div></div>
+                <div style="font-size:14px; margin:6px 0 4px 0;">ARMOR</div>
+                <div class="bar"><div id="armor-bar" class="bar-fill armor-fill"></div></div>
+            </div>
+            <div id="stats-center">
+                <img id="hud-face" src="hud_face.png" alt="face">
+                <!-- Wave information removed; only kill count is displayed -->
+                <div id="wave-info" style="display:none"></div>
+                <div id="kills-info">Kills: 0/100</div>
+                <div id="reload-info" class="hidden">RELOADING</div>
+            </div>
+            <div id="stats-right">
+                <img id="weapon-icon" class="weapon-icon" src="gun_idle.png" alt="weapon">
+                <div><span id="weapon-value">Shotgun</span></div>
+                <div><span id="ammo-value">8/∞</span></div>
+            </div>
+        </div>
+        <div id="overlay" class="hidden"></div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

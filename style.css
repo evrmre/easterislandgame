@@ -1,0 +1,187 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    /* Lighten the outside of the game container to give a daytime feel */
+    background-color: #87ceeb;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#game-container {
+    position: relative;
+    width: 960px;
+    height: 600px;
+    margin: 20px auto;
+    /* Use a lighter container background so the scene feels brighter when canvas fails to draw */
+    /* Use a mid-tone background so that the canvas brightness stands out */
+    background-color: #888;
+    box-shadow: 0 0 10px rgba(0,0,0,0.6);
+}
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* Neutral background behind the canvas – will be covered by rendering */
+    background-color: #333;
+    cursor: crosshair;
+    /* Remove the aggressive colour filter on the canvas. The game already
+       draws its own vibrant textures and colours, and applying a global
+       brightness/saturation filter washed out some textures completely.
+       Without this filter the sand and bamboo textures render at their
+       intended colour values. */
+    /* Previously a heavy brightness/saturation/contrast filter was
+       applied here, which caused wall and floor textures to look
+       uniformly pale and only show up faintly when a red overlay was
+       applied. If you wish to tweak the overall brightness of the
+       scene, consider adjusting individual draw functions instead. */
+    filter: none;
+}
+
+#hud {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 120px;
+    background: rgba(20, 20, 20, 0.7);
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    box-sizing: border-box;
+    font-size: 18px;
+    pointer-events: none;
+    font-family: monospace;
+}
+
+/* HUD sections: left for bars, centre for face, right for weapon info */
+#stats-left, #stats-center, #stats-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Health and armour bars */
+.bar {
+    position: relative;
+    width: 150px;
+    height: 16px;
+    margin: 4px 0;
+    background: #333;
+    border: 2px solid #555;
+}
+.bar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+}
+.health-fill {
+    background: linear-gradient(to right, #ff4444, #ff8888);
+}
+.armor-fill {
+    background: linear-gradient(to right, #4488ff, #88b0ff);
+}
+
+/* Wave and kills info in centre section */
+#wave-info, #kills-info, #reload-info {
+    font-size: 16px;
+    margin: 2px 0;
+}
+
+#reload-info {
+    color: #ff6666;
+    font-weight: bold;
+}
+
+/* Blinking animation for the reloading indicator. The text flashes on and
+   off every 0.3 seconds (0.6s total cycle) to alert the player when
+   reloading is in progress. */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+.reload-blink {
+    animation: blink 0.6s step-start infinite;
+}
+
+/* Weapon and ammo display on the right */
+.weapon-icon {
+    width: 48px;
+    height: 48px;
+    image-rendering: pixelated;
+    margin-bottom: 4px;
+}
+
+/* HUD face image */
+#hud-face {
+    width: 72px;
+    height: 72px;
+    image-rendering: pixelated;
+    margin-bottom: 6px;
+}
+
+.hidden {
+    display: none;
+}
+
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Lighten overlay background for game over message */
+    /* Lighten overlay so game over screen does not make the scene too dark */
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Special styling for the victory screen. When the player wins, the overlay
+   receives a .victory class which enlarges the text, gives it a warm
+   golden colour and adds a subtle shadow for dramatic effect. */
+#overlay.victory {
+    font-size: 40px;
+    color: #ffe066;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Win screen image styling. When the player wins, the overlay displays
+   a full image instead of text. Center the image and ensure it scales
+   to fit within the overlay while preserving aspect ratio. */
+#overlay.win-screen {
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Remove the fade-in effect on the win screen. When the player
+       reaches the kill target, the end-game image will appear
+       immediately instead of slowly fading in. This also prevents
+       any dimming from persisting into subsequent games. */
+    opacity: 1;
+    animation: none;
+}
+
+#overlay.win-screen img.win-img {
+    max-width: 90%;
+    max-height: 90%;
+    image-rendering: pixelated;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
