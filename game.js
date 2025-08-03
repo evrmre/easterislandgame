@@ -672,7 +672,7 @@
             zBuffer[i] = perpWallDist;
             // Calculate height of the wall slice
             const wallHeight = projectionPlane / (perpWallDist || 0.0001);
-            const startY = Math.floor((screenHeight / 2) - (wallHeight / 2));
+            const startY = Math.floor((screenHeight / 2) - wallHeight);
             const endY = startY + wallHeight;
             // Draw wall slice. If a bamboo texture is loaded, sample the
             // appropriate column from the image so that the pattern maps
