@@ -373,7 +373,10 @@
         textY += lineHeight;
         ctx.fillText('A/D: Turn left/right', textX, textY);
         textY += lineHeight;
-        ctx.fillText('Q/E: Strafe left/right', textX, textY);
+        // Update the control description to reflect that Q and E have been
+        // inverted for strafing. Q now strafes right and E strafes left. See
+        // the key handling logic below for implementation details.
+        ctx.fillText('Q/E: Strafe right/left', textX, textY);
         textY += lineHeight;
         ctx.fillText('SPACE/Click: Shoot', textX, textY);
         textY += lineHeight;
@@ -593,6 +596,14 @@
     }
 
     // Cast rays and draw the 3D walls
+    // Factor controlling how far down the walls appear relative to the horizon.
+    // A value of 0.5 centres the wall vertically (original behaviour). Values
+    // greater than 0.5 shift the wall downward, making the base sit lower
+    // relative to the horizon and ground. Tweak this to adjust how firmly
+    // walls appear anchored to the ground without sinking them too far. The
+    // goal is to eliminate the visible gap between the floor and walls
+    // without burying them in the ground. A value around 0.6–0.7 works well.
+    const WALL_BOTTOM_FACTOR = 0.6;
     function castRays() {
         // Reset composite properties to ensure wall textures render
         // consistently regardless of previous drawing state (e.g. damage
@@ -670,43 +681,30 @@
                 perpWallDist = maxRenderDist;
             }
             zBuffer[i] = perpWallDist;
-     // PATCH: Fix for "floating walls"—wall bottom now aligns with the ground/floor (horizon).
-
-// --- find the wall rendering block, replace the vertical position calculation ---
-// BEFORE (likely near line 670-700):
-const wallHeight = projectionPlane / (perpWallDist || 0.0001);
-const startY = Math.floor((screenHeight / 2) - (wallHeight / 2));
-const endY = startY + wallHeight;
-
-// AFTER:
-const horizon = Math.floor(screenHeight / 2);
-// Draw wall slice so its bottom edge is flush with the horizon (floor)
-// Clamp startY so it doesn't go negative
-const wallHeight = projectionPlane / (perpWallDist || 0.0001);
-const startY = Math.max(0, horizon - wallHeight);
-const endY = horizon;
-
-// When drawing the wall slice, ensure it ends at the horizon:
-if (bambooImg && bambooImg.complete) {
-    // ... unchanged texture calculations ...
-    ctx.drawImage(
-        bambooImg, texX, 0, 1, bambooImg.height,
-        i * stripWidth, startY, stripWidth, endY - startY
-    );
-} else if (bambooPattern) {
-    ctx.fillStyle = bambooPattern;
-    ctx.fillRect(i * stripWidth, startY, stripWidth, endY - startY);
-} else {
-    const baseR = COLORS.wallBase.r;
-    const baseG = COLORS.wallBase.g;
-    const baseB = COLORS.wallBase.b;
-    ctx.fillStyle = `rgb(${baseR},${baseG},${baseB})`;
-    ctx.fillRect(i * stripWidth, startY, stripWidth, endY - startY);
-}
-
-// No change to sky/floor logic; those are drawn separately.
-// This patch ensures the wall slices go right down to the ground (the horizon),
-// eliminating any "floating" appearance.
+            // Calculate height of the wall slice
+            const wallHeight = projectionPlane / (perpWallDist || 0.0001);
+            // Anchor the bottom of the wall to the horizon (top of the floor) instead of
+            // centring the wall vertically. In classic ray‑casters the wall is drawn
+            // centred around the midline of the viewport, which can result in a visible
+            // gap between the base of far walls and the floor. To eliminate this
+            // floating effect, we compute a horizon line and position each wall
+            // slice such that its bottom aligns exactly with that horizon. The
+            // horizon is halfway down the game view (screenHeight / 2). We then
+            // position the top of the wall by subtracting the wall height from the
+            // horizon. If the calculated start position is negative (for very tall
+            // walls), the browser will automatically clip the drawing. The endY
+            // variable is retained for clarity but unused directly because the
+            // drawImage call uses the wallHeight for its destination height.
+            // Position the wall slice so its base appears lower than the
+            // halfway point of the view. We compute a start position based on
+            // a configurable bottom factor. When WALL_BOTTOM_FACTOR is 0.5 the
+            // wall is centred vertically (as in the original code). Increasing
+            // this factor shifts the wall downward relative to the horizon
+            // line, making the base appear closer to the ground plane. This
+            // helps eliminate the floating effect without burying the wall too
+            // deeply. The end position is implicit as startY + wallHeight.
+            const startY = Math.floor((screenHeight / 2) - wallHeight * (1 - WALL_BOTTOM_FACTOR));
+            const endY = startY + wallHeight;
             // Draw wall slice. If a bamboo texture is loaded, sample the
             // appropriate column from the image so that the pattern maps
             // correctly to the wall based on the ray intersection. This
@@ -1216,8 +1214,13 @@ function drawSun() {
             case 'KeyS': player.moveBackward = true; break;
             case 'KeyA': player.turnLeft = true; break;
             case 'KeyD': player.turnRight = true; break;
-            case 'KeyQ': player.strafeLeft = true; break;
-            case 'KeyE': player.strafeRight = true; break;
+            // Invert strafing controls: Q now strafes right and E strafes left.
+            case 'KeyQ':
+                player.strafeRight = true;
+                break;
+            case 'KeyE':
+                player.strafeLeft = true;
+                break;
             case 'Digit1': selectedWeapon = 'shotgun'; updateUI(); break;
             case 'Digit2': selectedWeapon = 'laser'; updateUI(); break;
             case 'KeyR': reloadWeapon(); break;
@@ -1230,8 +1233,13 @@ function drawSun() {
             case 'KeyS': player.moveBackward = false; break;
             case 'KeyA': player.turnLeft = false; break;
             case 'KeyD': player.turnRight = false; break;
-            case 'KeyQ': player.strafeLeft = false; break;
-            case 'KeyE': player.strafeRight = false; break;
+            // Release inverted strafing controls
+            case 'KeyQ':
+                player.strafeRight = false;
+                break;
+            case 'KeyE':
+                player.strafeLeft = false;
+                break;
         }
     });
     // Mouse click to shoot
