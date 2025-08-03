@@ -670,10 +670,43 @@
                 perpWallDist = maxRenderDist;
             }
             zBuffer[i] = perpWallDist;
-            // Calculate height of the wall slice
-            const wallHeight = projectionPlane / (perpWallDist || 0.0001);
-            const startY = Math.floor((screenHeight / 2) - wallHeight);
-            const endY = startY + wallHeight;
+     // PATCH: Fix for "floating walls"—wall bottom now aligns with the ground/floor (horizon).
+
+// --- find the wall rendering block, replace the vertical position calculation ---
+// BEFORE (likely near line 670-700):
+const wallHeight = projectionPlane / (perpWallDist || 0.0001);
+const startY = Math.floor((screenHeight / 2) - (wallHeight / 2));
+const endY = startY + wallHeight;
+
+// AFTER:
+const horizon = Math.floor(screenHeight / 2);
+// Draw wall slice so its bottom edge is flush with the horizon (floor)
+// Clamp startY so it doesn't go negative
+const wallHeight = projectionPlane / (perpWallDist || 0.0001);
+const startY = Math.max(0, horizon - wallHeight);
+const endY = horizon;
+
+// When drawing the wall slice, ensure it ends at the horizon:
+if (bambooImg && bambooImg.complete) {
+    // ... unchanged texture calculations ...
+    ctx.drawImage(
+        bambooImg, texX, 0, 1, bambooImg.height,
+        i * stripWidth, startY, stripWidth, endY - startY
+    );
+} else if (bambooPattern) {
+    ctx.fillStyle = bambooPattern;
+    ctx.fillRect(i * stripWidth, startY, stripWidth, endY - startY);
+} else {
+    const baseR = COLORS.wallBase.r;
+    const baseG = COLORS.wallBase.g;
+    const baseB = COLORS.wallBase.b;
+    ctx.fillStyle = `rgb(${baseR},${baseG},${baseB})`;
+    ctx.fillRect(i * stripWidth, startY, stripWidth, endY - startY);
+}
+
+// No change to sky/floor logic; those are drawn separately.
+// This patch ensures the wall slices go right down to the ground (the horizon),
+// eliminating any "floating" appearance.
             // Draw wall slice. If a bamboo texture is loaded, sample the
             // appropriate column from the image so that the pattern maps
             // correctly to the wall based on the ray intersection. This
